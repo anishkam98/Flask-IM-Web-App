@@ -1,0 +1,40 @@
+version: "3.7"
+
+services:
+  app:
+    build:
+      context: ./flask
+    ports:
+      - "5000"
+    links:
+      - db
+    container_name: chatapp
+    restart: always
+    command: gunicorn --bind 0.0.0.0:5000 --worker-class eventlet -w 1 app:app --reload
+
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app
+    ports:
+      # Use 81:80 if 80 already in use on Windows
+      #- "81:80"
+      - "80:80"
+    container_name: chatapp-nginx
+    restart: always
+
+  db:
+    image: mysql:latest
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./database/chatapp.sql:/docker-entrypoint-initdb.d/dump.sql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: chatapp
+    command: mysqld --innodb-flush-log-at-trx-commit=1 --sync_binlog=1
+    container_name: chatapp_db
+    restart: always
+
