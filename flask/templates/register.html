@@ -17,7 +17,7 @@
         <form class="rg-form" action="/register" method="post">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <h2>Create An Account</h2>
-            <div>{{ msg }}</div>
+            <div id="error-message">{{ msg }}</div>
             <div class="rf-input-container"><i class="fa fa-star fa fa-user rf-icon"></i><input class="form-control rf-input-field" type="text" placeholder="First Name" name="firstname" required maxlength="40"></div>
             <div class="rf-input-container"><i class="fa fa-star fa fa-user rf-icon"></i><input class="form-control rf-input-field" type="text" placeholder="Middle Name" name="middlename" maxlength="40"></div>
             <div class="rf-input-container"><i class="fa fa-star fa fa-user rf-icon"></i><input class="form-control rf-input-field" type="text" placeholder="Last Name" name="lastname" required maxlength="40"></div>
@@ -25,7 +25,9 @@
             <div class="rf-input-container"><i class="fa fa-star fa fa-envelope rf-icon"></i><input class="form-control rf-input-field" type="email" placeholder="Email" name="email" required maxlength="40"></div>
             <div class="rf-input-container"><i class="fa fa-star fa fa-key rf-icon"></i><input class="form-control rf-input-field" type="password" placeholder="Password" name="password" required maxlength="45"></div>
             <button class="btn btn-primary rf-btn" type="submit">Register</button>
-            <a href="{{ url_for('login') }}">&larr;</a>
+            <div id="back-arrow-container">
+                <a id="back-arrow-anchor" href="{{ url_for('login') }}"><img id="back-arrow" src="{{url_for('static', filename='/assets/images/back_arrow.png')}}" alt="Back arrow icon" /></a>
+            </div>
         </form>
     </div>
     <script src="{{url_for('static', filename='/assets/bootstrap/js/bootstrap.min.js')}}"></script>
