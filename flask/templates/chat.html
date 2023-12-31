@@ -16,27 +16,27 @@
     <div id="chat-container">
         <div id="message-container">
             {% for i in IMs %}
-            {% if i.username == session['user'].username %}
+            {% if i.username == current_user.username %}
             <div class="my-IM-container" id="IM-{{ i.log_id }}">
-                <div class="trash-icon-container"><img onclick="deletemessage({{ session['user'].userid }}, {{ i.log_id }})" src="{{url_for('static', filename='/assets/images/garbage-gbf321eba2_1280.png')}}" alt="Trash icon" /></div>
+                <div class="trash-icon-container"><img onclick="deletemessage({{ current_user.userid }}, {{ i.log_id }})" src="{{url_for('static', filename='/assets/images/garbage-gbf321eba2_1280.png')}}" alt="Trash icon" /></div>
                 <div class="mybubble">
                     <div class="IMs">{{ i.IM }}<br/><div class="timestamp">{{ i.created_date }}</div></div>
                 </div>
                 <div class="IM-info">
-                    <div class="IM-icon"><img src="{{url_for('static', filename='/assets/images/blank-profile-picture-ga924d6646_1280.png')}}" alt="Stock profile icon" /></div>
+                    <div class="IM-icon"><img src="{{url_for('static', filename='/assets/images/stock_profile_picture.png')}}" alt="Stock profile icon" /></div>
                     <div class="IM-name">{{ i.username }}</div>
                 </div>
             </div>
             {% else %}
             <div class="their-IM-container" id="IM-{{ i.log_id }}">
                 <div class="IM-info">
-                    <div class="IM-icon"><img src="{{url_for('static', filename='/assets/images/blank-profile-picture-ga924d6646_1280.png')}}" alt="Stock profile icon" /></div>
+                    <div class="IM-icon"><img src="{{url_for('static', filename='/assets/images/stock_profile_picture.png')}}" alt="Stock profile icon" /></div>
                     <div class="IM-name">{{ i.username }}</div>
                 </div>
                 <div class="theirbubble">
                     <div class="IMs">{{ i.IM }}<br/><div class="timestamp">{{ i.created_date }}</div></div>
                 </div>
-                <div class="report-icon-container"><img onclick="reportmessage({{ session['user'].userid }}, {{ i.log_id }})" src="{{url_for('static', filename='/assets/images/flag-gc79f6babc_1280.png')}}" alt="Flag report icon" /></div>
+                <div class="report-icon-container"><img onclick="reportmessage({{ current_user.userid }}, {{ i.log_id }})" src="{{url_for('static', filename='/assets/images/flag-gc79f6babc_1280.png')}}" alt="Flag report icon" /></div>
             </div>
             {% endif %}
             {% endfor %}
@@ -48,8 +48,10 @@
         </div>
     </div>
     <script src="{{url_for('static', filename='/assets/bootstrap/js/bootstrap.min.js')}}"></script>
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script> 
+    <!--<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>-->
+    <script src="https://code.jquery.com/jquery-latest.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" integrity="sha384-mZLF4UVrpi/QTWPA7BjNPEnkIfRFn4ZEO3Qt/HFklTJBj/gBOV8G3HcKn4NfQblz" crossorigin="anonymous"></script>
+    <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script> -->
     <script>
         const socket = io.connect('http://' + document.domain + ':' + location.port, {
             reconnection: true,
@@ -61,14 +63,14 @@
         socket.on('connect', function() {
             socket.emit('join_room', {
                 chatid: "{{ id }}",
-                userid: "{{ session['user'].userid }}",
-                username: "{{ session['user'].username }}"
+                userid: "{{ current_user.userid }}",
+                username: "{{ current_user.username }}"
 
             })
         });
 
         socket.on('join_room_announcement', function(data) {
-            if (data.username !== "{{ session['user'].username }}") {
+            if (data.username !== "{{ current_user.username }}") {
                 $('#message-container').append(
                     '<div class="announcement">' + data.username + ' is active in the chat.</div>'
                 )
@@ -96,8 +98,8 @@
                 if(message){
                     socket.emit('send_message', {
                         chatid: "{{ id }}",
-                        userid: "{{ session['user'].userid }}",
-                        username: "{{ session['user'].username }}",
+                        userid: "{{ current_user.userid }}",
+                        username: "{{ current_user.username }}",
                         message: message
                     })
                     $('#message-input').val('')
@@ -108,7 +110,7 @@
 
         socket.on('receive_message', function(data) {
             let convotop = $('#message-container');
-            if(data.username == "{{ session['user'].username }}") {
+            if(data.username == "{{ current_user.username }}") {
                 $('#message-container').append(
                     '<div class="my-IM-container" id="IM-' + data.log_id + '">' +
                         '<div class="trash-icon-container"><img onclick="deletemessage(' + data.userid + ', ' +  data.log_id + ')" src="/static/assets/images/garbage-gbf321eba2_1280.png" alt="Trash icon" /></div>' +
@@ -116,7 +118,7 @@
                             '<div class="IMs">' + data.message + '<br/><div class="timestamp">' + data.timestamp + '</div></div>' +
                         '</div>' + 
                         '<div class="IM-info">' + 
-                            '<div class="IM-icon"><img src="/static/assets/images/blank-profile-picture-ga924d6646_1280.png" alt="Stock profile icon" /></div>' + 
+                            '<div class="IM-icon"><img src="/static/assets/images/stock_profile_picture.png" alt="Stock profile icon" /></div>' + 
                             '<div class="IM-name">' + data.username + '</div>' +
                         '</div>' +
                     '</div>'
@@ -126,7 +128,7 @@
                 $('#message-container').append(
                     '<div class="their-IM-container" id="IM-' + data.log_id + '">' +
                         '<div class="IM-info">' + 
-                            '<div class="IM-icon"><img src="/static/assets/images/blank-profile-picture-ga924d6646_1280.png" alt="Stock profile icon" /></div>' + 
+                            '<div class="IM-icon"><img src="/static/assets/images/stock_profile_picture.png" alt="Stock profile icon" /></div>' + 
                             '<div class="IM-name">' + data.username + '</div>' +
                         '</div>' +
                         '<div class="theirbubble">' + 
@@ -160,8 +162,8 @@
         window.onbeforeunload = function (data) {
             socket.emit('leave_room', {
                 chatid: "{{ id }}",
-                userid: "{{ session['user'].userid }}",
-                username: "{{ session['user'].username }}"
+                userid: "{{ current_user.userid }}",
+                username: "{{ current_user.username }}"
             })
         };
     </script>

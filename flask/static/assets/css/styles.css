@@ -1,7 +1,33 @@
 body{
     height: 100vh;
 }
+
+/* General Styles */
+#error-message {
+    color: #FF0000
+}
+
+/* Login page styles */ 
+
 /* Registration page styles */
+#back-arrow-container {
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+    flex-direction: row;
+}
+
+#back-arrow-anchor {
+    width: 10%;
+}
+
+#back-arrow {
+    width: 100%;
+}
+
+#back-arrow:hover {
+    transform: scale(1.3);
+}
 
 /* Main page styles */
 #main-middle {
