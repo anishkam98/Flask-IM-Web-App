@@ -13,30 +13,33 @@
 </head>
 
 <body>
+    {% with active='' %}
+    {% include 'components/nav-bar.html' %}
+    {% endwith %}
     <div id="chat-container">
         <div id="message-container">
-            {% for i in IMs %}
-            {% if i.username == current_user.username %}
-            <div class="my-IM-container" id="IM-{{ i.log_id }}">
-                <div class="trash-icon-container"><img onclick="deletemessage({{ current_user.userid }}, {{ i.log_id }})" src="{{url_for('static', filename='/assets/images/garbage-gbf321eba2_1280.png')}}" alt="Trash icon" /></div>
+            {% for IM in IMs %}
+            {% if IM.username == current_user.username %}
+            <div class="my-IM-container" id="IM-{{ IM.log_id }}">
+                <div class="trash-icon-container"><img onclick="deletemessage({{ current_user.userid }}, {{ IM.log_id }})" src="{{url_for('static', filename='/assets/images/garbage-gbf321eba2_1280.png')}}" alt="Trash icon" /></div>
                 <div class="mybubble">
-                    <div class="IMs">{{ i.IM }}<br/><div class="timestamp">{{ i.created_date }}</div></div>
+                    <div class="IMs">{{ IM.IM }}<br/><div class="timestamp">{{ IM.created_date }}</div></div>
                 </div>
                 <div class="IM-info">
                     <div class="IM-icon"><img src="{{url_for('static', filename='/assets/images/stock_profile_picture.png')}}" alt="Stock profile icon" /></div>
-                    <div class="IM-name">{{ i.username }}</div>
+                    <div class="IM-name">{{ IM.username }}</div>
                 </div>
             </div>
             {% else %}
-            <div class="their-IM-container" id="IM-{{ i.log_id }}">
+            <div class="their-IM-container" id="IM-{{ IM.log_id }}">
                 <div class="IM-info">
                     <div class="IM-icon"><img src="{{url_for('static', filename='/assets/images/stock_profile_picture.png')}}" alt="Stock profile icon" /></div>
-                    <div class="IM-name">{{ i.username }}</div>
+                    <div class="IM-name">{{ IM.username }}</div>
                 </div>
                 <div class="theirbubble">
-                    <div class="IMs">{{ i.IM }}<br/><div class="timestamp">{{ i.created_date }}</div></div>
+                    <div class="IMs">{{ IM.IM }}<br/><div class="timestamp">{{ IM.created_date }}</div></div>
                 </div>
-                <div class="report-icon-container"><img onclick="reportmessage({{ current_user.userid }}, {{ i.log_id }})" src="{{url_for('static', filename='/assets/images/flag-gc79f6babc_1280.png')}}" alt="Flag report icon" /></div>
+                <div class="report-icon-container"><img onclick="reportmessage({{ current_user.userid }}, {{ IM.log_id }})" src="{{url_for('static', filename='/assets/images/flag-gc79f6babc_1280.png')}}" alt="Flag report icon" /></div>
             </div>
             {% endif %}
             {% endfor %}
@@ -44,14 +47,12 @@
         <div id="textholder">
             <textarea id="message-input" type="textarea" rows="3" cols="50" maxlength="200" autofocus></textarea>
             <button type="button" id="send">Send</button>
-            <a href="{{ url_for('main') }}">&larr;</a>
+            <a href="{{ url_for('home') }}">&larr;</a>
         </div>
     </div>
     <script src="{{url_for('static', filename='/assets/bootstrap/js/bootstrap.min.js')}}"></script>
-    <!--<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>-->
     <script src="https://code.jquery.com/jquery-latest.min.js"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js" integrity="sha384-mZLF4UVrpi/QTWPA7BjNPEnkIfRFn4ZEO3Qt/HFklTJBj/gBOV8G3HcKn4NfQblz" crossorigin="anonymous"></script>
-    <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script> -->
     <script>
         const socket = io.connect('http://' + document.domain + ':' + location.port, {
             reconnection: true,
@@ -143,12 +144,19 @@
 
         function deletemessage(user, id) {
             socket.emit('delete_message', {
+                chatid: "{{ id }}",
                 userid: user,
                 logid: id
             })
             let deleteIM = $("#IM-"+id);
             deleteIM.empty();
         };
+
+        // Removes deleted messages in realtime
+        socket.on('message_deleted', function(data) {
+            let deleteIM = $("#IM-"+data.logid);
+            deleteIM.empty();
+        });
 
         function reportmessage(user, id) {
             socket.emit('report_message', {
