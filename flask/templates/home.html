@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>chatapp</title>
+    <link rel="stylesheet" href="{{url_for('static', filename='/assets/bootstrap/css/bootstrap.min.css')}}">
+    <link rel="stylesheet" href="{{url_for('static', filename='/assets/fonts/font-awesome.min.css')}}">
+    <link rel="stylesheet" href="{{url_for('static', filename='/assets/css/Login-Form-Basic.css')}}">
+    <link rel="stylesheet" href="{{url_for('static', filename='/assets/css/Register-form.css')}}">
+    <link rel="stylesheet" href="{{url_for('static', filename='/assets/css/styles.css')}}">
+</head>
+
+<body>
+    {% with active='home' %}
+    {% include 'components/nav-bar.html' %}
+    {% endwith %}
+    <div id="main-middle">
+        <div id="active-chats-container">
+            Active Chats
+        <div id="active-chats">
+            {% for conversation in conversations %}
+            <div class="active-chats-row"><a href="{{url_for('chat', id=conversation.conversation_id )}}">{{ conversation.name }}</a></div>
+            {% endfor %}
+        </div>
+        </div>
+        <div id="online-users-container">
+            Online Users
+            <form id="online-users" action="/main" method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="username" value="" id="online-username" />
+                <input type="hidden" name="other_userid" value="" id="online-userid" />
+                {% for user in activeusers %}
+                <div class="online-user-row" id="online-user-row-{{ user.user_id }}"><div class="online-user-name">{{ user.username }} </div><button class="online-user-icon" type="button" onclick="onlineUserSubmit('{{ user.user_id }}', '{{ user.username }}')" value="{{ user.userid }}"><img src="{{url_for('static', filename='/assets/images/comments-97860_1280.png')}}" alt="Chat bubble icon" /></button></div>
+                {% endfor %}
+            </form>
+        </div>
+    </div>
+    <script src="{{url_for('static', filename='/assets/bootstrap/js/bootstrap.min.js')}}"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script>
+        function onlineUserSubmit(userid, username) {
+            $('#online-username').val(username)
+            $('#online-userid').val(userid)
+            $("#online-users").submit();
+        }
+    </script>
+</body>
+
+</html>

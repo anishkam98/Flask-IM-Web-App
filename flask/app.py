@@ -44,9 +44,6 @@ def apply_caching(response):
 
 @login_manager.user_loader
 def load_user(user_id):
-    print("user" in session and session["user"].get_id() == user_id)
-    print(user_id)
-    print(session["user"].get_id())
     return session["user"] if "user" in session and str(session["user"].get_id()) == str(user_id) else None
 
 @app.login_manager.unauthorized_handler
@@ -68,7 +65,6 @@ def login():
             hashed_password = account["password"].encode('utf-8')
             if bcrypt.checkpw(password, hashed_password):
                 # Create object and appropriate session data
-                #session["loggedin"] = True
                 authenticatedUser = User(account['user_id'], account['username'], account['first_name'], account['last_name'])
                 # TODO: Implement Remember Me functionality
                 login_user(authenticatedUser)
@@ -77,7 +73,7 @@ def login():
                 # Change status to show that user is online
                 cursor.execute('UPDATE tb_users SET is_online = 1 WHERE user_id = %s', [session['user'].userid])
                 mysql.connection.commit()
-                return redirect(url_for('main'))
+                return redirect(url_for('home'))
             # If the hash values don't match
             else:
                 errorMessage = ("Incorrect Username or Password.")
@@ -105,9 +101,9 @@ def register():
         cursor.execute("SELECT user_id FROM tb_users WHERE email = %s", [email])
         checkemail = cursor.fetchall()
         if checkusername:
-            errorMessage = 'Please select a different username.'
+            errorMessage = 'Invalid username.'
         elif checkemail:
-            errorMessage = 'This email is already in use.'  
+            errorMessage = 'Invalid email.'  
         # Create the user
         else:
             if middlename:
@@ -118,9 +114,9 @@ def register():
             return redirect(url_for('login'))
     return render_template('register.html', errorMessage=errorMessage)
   
-@app.route('/main', methods=['GET', 'POST'])
+@app.route('/home', methods=['GET', 'POST'])
 @login_required
-def main():
+def home():
     cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
     # Get other users that are online
     cursor.execute('SELECT username, user_id FROM tb_users WHERE is_online = 1 and user_id != %s', [session['user'].userid])
@@ -141,7 +137,12 @@ def main():
         cursor.execute('INSERT INTO tb_user_conversations (conversation_id, user_id, is_creator) VALUES (%s, %s, 0)', [convoid['convoid'], other_userid])
         mysql.connection.commit()
         return redirect(url_for('chat', id=convoid['convoid']))
-    return render_template('main.html', activeusers=activeusers, conversations=conversations)
+    return render_template('home.html', activeusers=activeusers, conversations=conversations)
+
+@app.route('/settings', methods=['GET'])
+@login_required
+def settings():
+    return render_template('settings.html')
 
 @app.route('/chat-<id>', methods=['GET', 'POST'])
 @login_required
@@ -151,10 +152,10 @@ def chat(id):
     cursor.execute("SELECT l.log_id, u.user_id, json_extract(Log_content, '$.IM') as IM, u.username, l.created_date FROM tb_log l INNER JOIN tb_users u ON u.user_id=l.user_id  WHERE json_extract(Log_content, '$.chatid') = %s and json_extract(Log_content, '$.deleted') = \"0\" ORDER BY l.created_date", [escape(id)])
     IMs_log = cursor.fetchall()
     IMs = []
-    for i in IMs_log:
-        converted_im = json.loads(i['IM'])
-        timestamp = i['created_date'].strftime("%d %b %Y %I:%M:%S %p")
-        IMs.append({'log_id': i['log_id'], 'user_id': i['user_id'], 'IM': converted_im, 'username': i['username'], 'created_date': timestamp})
+    for IM in IMs_log:
+        converted_im = json.loads(IM['IM'])
+        timestamp = IM['created_date'].strftime("%d %b %Y %I:%M:%S %p")
+        IMs.append({'log_id': IM['log_id'], 'user_id': IM['user_id'], 'IM': converted_im, 'username': IM['username'], 'created_date': timestamp})
     return render_template('chat.html', id=id, IMs=IMs)
 
 @socketio.on('join_room')
@@ -177,9 +178,9 @@ def handle_send_message_event(data):
     log_id = cursor.fetchone()
     # Retrieve the timestamp
     cursor.execute("SELECT created_date FROM tb_log WHERE log_id = %s", [log_id['log_id']])
-    t = cursor.fetchone()
+    timestamp_record = cursor.fetchone()
     # Reformat the timestamp and add it to the data
-    timestamp = t['created_date'].strftime("%d %b %Y %I:%M:%S %p")
+    timestamp = timestamp_record['created_date'].strftime("%d %b %Y %I:%M:%S %p")
     data.update({'timestamp': timestamp, 'log_id': log_id['log_id']})
     # Emit to all players in this chat
     socketio.emit('receive_message', data, to=data['chatid'])
@@ -193,6 +194,8 @@ def handle_delete_message_event(data):
     # Mark the log entry as deleted
     cursor.execute("UPDATE tb_log SET log_content = JSON_REPLACE(Log_content, '$.deleted', '1') WHERE log_id = %s", [escape(data['logid'])])
     mysql.connection.commit()
+    # Emit to all players in this chat so message will be removed in realtime
+    socketio.emit('message_deleted', data, to=data['chatid'])
     
 @socketio.on('report_message')
 def handle_report_message_event(data):
@@ -219,7 +222,6 @@ def logout():
     cursor.execute('UPDATE tb_users SET is_online = 0 WHERE user_id = %s', [session['user'].userid])
     mysql.connection.commit()
     # Remove session data and return to login page
-    session["user"].is_authenticated = False
     current_user.is_authenticated = False
     session.clear()
     logout_user()
