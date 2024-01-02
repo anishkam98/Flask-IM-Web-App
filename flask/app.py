@@ -76,10 +76,10 @@ def login():
                 return redirect(url_for('home'))
             # If the hash values don't match
             else:
-                errorMessage = ("Incorrect Username or Password.")
+                errorMessage = ("Invalid login credentials.")
         # If the user doesn't exist
         else:     
-            errorMessage = ("Incorrect Username or Password.")
+            errorMessage = ("Invalid login credentials.")
     return render_template('login.html', errorMessage=errorMessage)
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -89,27 +89,26 @@ def register():
         firstname = request.form['firstname']
         middlename = request.form['middlename']
         lastname = request.form['lastname']
-        email = request.form['email']
-        username = request.form['username']
+        email = request.form['email'].lower()
+        username = request.form['username'].lower()
         password = request.form['password']
         # Hash the password
         passwordhash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         # Check if the email and username are already in use
-        cursor.execute("SELECT user_id FROM tb_users WHERE username = %s", [username])
-        checkusername = cursor.fetchall()
-        cursor.execute("SELECT user_id FROM tb_users WHERE email = %s", [email])
-        checkemail = cursor.fetchall()
-        if checkusername:
-            errorMessage = 'Invalid username.'
-        elif checkemail:
-            errorMessage = 'Invalid email.'  
+        cursor.execute('SELECT user_id, username, email FROM tb_users WHERE email = %s OR username = %s', [email, username])
+        users = cursor.fetchall()
+        for user in users:
+            if email == user['email']:
+                errorMessage += 'Please select a different email. '
+            if username == user['username']:
+                errorMessage += 'Please select a different username. '
         # Create the user
-        else:
+        if not errorMessage:
             if middlename:
-                cursor.execute('INSERT INTO tb_users (first_name, middle_name, last_name, username, email, password, is_active, is_online) VALUES (%s, %s, %s, %s, %s, %s, 1, 0)', [firstname, middlename, lastname, username.lower(), email.lower(), passwordhash])
+                cursor.execute('INSERT INTO tb_users (first_name, middle_name, last_name, username, email, password, is_active, is_online) VALUES (%s, %s, %s, %s, %s, %s, 1, 0)', [firstname, middlename, lastname, username, email, passwordhash])
             else:
-                cursor.execute('INSERT INTO tb_users (first_name, last_name, username, email, password, is_active, is_online) VALUES (%s, %s, %s, %s, %s, 1, 0)', [firstname, lastname, username.lower(), email.lower(), passwordhash])
+                cursor.execute('INSERT INTO tb_users (first_name, last_name, username, email, password, is_active, is_online) VALUES (%s, %s, %s, %s, %s, 1, 0)', [firstname, lastname, username, email, passwordhash])
             mysql.connection.commit()
             return redirect(url_for('login'))
     return render_template('register.html', errorMessage=errorMessage)
@@ -133,8 +132,7 @@ def home():
         cursor.execute('SELECT LAST_INSERT_ID() as convoid')
         convoid = cursor.fetchone()
         # Add the appropriate users to the chat
-        cursor.execute('INSERT INTO tb_user_conversations (conversation_id, user_id, is_creator) VALUES (%s, %s, 1)', [convoid['convoid'], [session['user'].userid]])
-        cursor.execute('INSERT INTO tb_user_conversations (conversation_id, user_id, is_creator) VALUES (%s, %s, 0)', [convoid['convoid'], other_userid])
+        cursor.executemany('INSERT INTO tb_user_conversations (conversation_id, user_id, is_creator) VALUES (%s, %s, %s)', [(convoid['convoid'], session['user'].userid, 1), (convoid['convoid'], other_userid, 0)])
         mysql.connection.commit()
         return redirect(url_for('chat', id=convoid['convoid']))
     return render_template('home.html', activeusers=activeusers, conversations=conversations)
