@@ -25,25 +25,29 @@
 
 .rf-icon {
   padding: 10px;
-  background: dodgerblue;
+  background: var(--bs-primary);
   color: white;
   min-width: 50px;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-radius: 0.25rem 0 0 0.25rem;
 }
 
 .rf-input-field {
   width: 100%;
   padding: 10px;
   outline: none;
-  border-radius: 0;
+  border-radius: 0 0.25rem 0.25rem 0;
 }
 
 .rf-input-field:focus {
-  border: 2px solid dodgerblue;
+  border: 2px solid var(--bs-primary);
 }
 
 .rf-btn {
-  background-color: dodgerblue;
+  background-color: var(--bs-primary);
   color: white;
   padding: 15px 20px;
   border: none;

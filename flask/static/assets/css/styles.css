@@ -29,6 +29,10 @@ body{
     transform: scale(1.3);
 }
 
+.icon-input-container {
+    display: flex;
+}
+
 /* Main page styles */
 #main-middle {
     display: flex;
